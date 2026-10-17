@@ -46,6 +46,9 @@ public class EventController {
                 .price(requestDto.price())
                 .totalSeats(requestDto.totalSeats())
                 .availableSeats(requestDto.totalSeats()) // Initialize available seats to total seats
+                .imageUrl(requestDto.imageUrl())
+                .organizer(requestDto.organizer() != null ? requestDto.organizer() : "EventHub Host")
+                .featured(requestDto.featured() != null ? requestDto.featured() : false)
                 .status("UPCOMING")
                 .build();
 

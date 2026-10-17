@@ -25,6 +25,10 @@ public record EventRequestDto (
     Double price,
 
     @Positive(message = "Total seats must be positive")
-    Integer totalSeats
+    Integer totalSeats,
+
+    String imageUrl,
+    String organizer,
+    Boolean featured
 ) {}
 

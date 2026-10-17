@@ -1,6 +1,7 @@
 package com.isigntech.eventhub.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Event {
 	
 	@Id
@@ -23,12 +25,14 @@ public class Event {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "events"})
     private EventCategory category;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "venue_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "events"})
     private Venue venue;
 
     @Column(name = "date_time", nullable = false)
@@ -43,7 +47,12 @@ public class Event {
     @Column(name = "available_seats", nullable = false)
     private Integer availableSeats;
 
-    
-    private String status; // e.g., UPCOMING, COMPLETED, CANCELLED
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
 
+    private String organizer;
+
+    private Boolean featured;
+
+    private String status; // e.g., UPCOMING, COMPLETED, CANCELLED
 }

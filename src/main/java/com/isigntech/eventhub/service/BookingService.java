@@ -28,6 +28,8 @@ public class BookingService {
 	{
 		for(var item : booking.getBookingItems())
 		{
+			item.setBooking(booking);
+
 			Event event = eventRepository.findById(item.getEvent().getId())
                     .orElseThrow(() -> new RuntimeException("Event not found"));
 			

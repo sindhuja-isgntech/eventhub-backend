@@ -1,5 +1,7 @@
 package com.isigntech.eventhub.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Venue {
 	
 	@Id
@@ -27,6 +30,7 @@ public class Venue {
     @Column(nullable = false)
     private Integer capacity;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "venue", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Event> events;
 
