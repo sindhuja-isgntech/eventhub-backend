@@ -25,11 +25,15 @@ public class Event {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "events"})
     private EventCategory category;
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "venue_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "events"})

@@ -27,6 +27,8 @@ public class EventCategory {
     private String status; // e.g., ACTIVE, INACTIVE
 
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Event> events;
 
