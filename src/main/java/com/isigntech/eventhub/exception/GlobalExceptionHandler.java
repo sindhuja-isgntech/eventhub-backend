@@ -13,6 +13,16 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthException(AuthException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", ex.getStatus().value());
+        errorResponse.put("error", ex.getStatus().getReasonPhrase());
+        errorResponse.put("message", ex.getMessage());
+        return new ResponseEntity<>(errorResponse, ex.getStatus());
+    }
 	
 	@ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {

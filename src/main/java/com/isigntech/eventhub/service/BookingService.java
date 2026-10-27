@@ -6,15 +6,17 @@ import com.isigntech.eventhub.entity.Booking;
 import com.isigntech.eventhub.entity.BookingItem;
 import com.isigntech.eventhub.entity.Event;
 import com.isigntech.eventhub.entity.User;
+import com.isigntech.eventhub.exception.AuthException;
 import com.isigntech.eventhub.repository.BookingRepository;
 import com.isigntech.eventhub.repository.EventRepository;
-import com.isigntech.eventhub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -22,28 +24,9 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final EventRepository eventRepository;
-    private final UserRepository userRepository;
 
     @Transactional
-    public Booking createBooking(BookingRequestDto requestDto) {
-        // 1. Fetch & validate user
-        User user = null;
-        if (requestDto.userId() != null) {
-            user = userRepository.findById(requestDto.userId()).orElse(null);
-        }
-        if (user == null) {
-            user = userRepository.findAll().stream().findFirst().orElseGet(() ->
-                    userRepository.save(User.builder()
-                            .name("Alex Morgan")
-                            .email("alex.morgan@example.com")
-                            .password("demo123")
-                            .phone("+1 (555) 234-5678")
-                            .role("CUSTOMER")
-                            .build())
-            );
-        }
-
-        // 2. Fetch & validate event seats
+    public BookingResponse createBooking(BookingRequestDto requestDto, User user) {
         Event event = eventRepository.findById(requestDto.eventId())
                 .orElseThrow(() -> new RuntimeException("Event not found with id: " + requestDto.eventId()));
 
@@ -52,11 +35,9 @@ public class BookingService {
                     + requestDto.quantity() + ", Available: " + event.getAvailableSeats());
         }
 
-        // 3. Deduct available seats
         event.setAvailableSeats(event.getAvailableSeats() - requestDto.quantity());
         eventRepository.save(event);
 
-        // 4. Create and populate Booking
         Double totalAmount = event.getPrice() * requestDto.quantity();
         Booking booking = Booking.builder()
                 .user(user)
@@ -67,7 +48,6 @@ public class BookingService {
                 .attendees(new ArrayList<>())
                 .build();
 
-        // 5. Build BookingItem
         BookingItem item = BookingItem.builder()
                 .booking(booking)
                 .event(event)
@@ -77,7 +57,6 @@ public class BookingService {
                 .build();
         booking.getBookingItems().add(item);
 
-        // 6. Build Attendee records
         if (requestDto.attendees() != null && !requestDto.attendees().isEmpty()) {
             for (var attendeeDto : requestDto.attendees()) {
                 Attendee attendee = Attendee.builder()
@@ -98,15 +77,83 @@ public class BookingService {
             booking.getAttendees().add(attendee);
         }
 
-        return bookingRepository.save(booking);
+        return BookingResponse.from(bookingRepository.save(booking));
     }
 
-    public Booking getBookingById(Long id) {
-        return bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + id));
+    @Transactional(readOnly = true)
+    public List<BookingResponse> getBookingsForUser(User user) {
+        return bookingRepository.findByUser_IdOrderByBookingDateDesc(user.getId())
+                .stream()
+                .map(BookingResponse::from)
+                .toList();
     }
 
-    public List<Booking> getBookingsByUser(Long userId) {
-        return bookingRepository.findByUserId(userId);
+    @Transactional(readOnly = true)
+    public List<BookingResponse> getAllBookings() {
+        return bookingRepository.findAllByOrderByBookingDateDesc()
+                .stream()
+                .map(BookingResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public BookingResponse getBookingById(Long id, User currentUser, boolean isAdmin) {
+        Booking booking = findBooking(id);
+        ensureOwnerOrAdmin(booking, currentUser, isAdmin);
+        return BookingResponse.from(booking);
+    }
+
+    @Transactional
+    public BookingResponse cancelBooking(Long id, User currentUser, boolean isAdmin) {
+        Booking booking = findBooking(id);
+        ensureOwnerOrAdmin(booking, currentUser, isAdmin);
+        if ("CONFIRMED".equals(booking.getStatus())) {
+            updateStatus(booking, "CANCELLED");
+        }
+        return BookingResponse.from(booking);
+    }
+
+    @Transactional
+    public BookingResponse updateBookingStatus(Long id, String requestedStatus) {
+        String status = requestedStatus.toUpperCase(Locale.ROOT);
+        if (!List.of("CONFIRMED", "CANCELLED", "ATTENDED").contains(status)) {
+            throw new AuthException(HttpStatus.BAD_REQUEST, "Booking status must be CONFIRMED, CANCELLED, or ATTENDED.");
+        }
+        Booking booking = findBooking(id);
+        updateStatus(booking, status);
+        return BookingResponse.from(bookingRepository.save(booking));
+    }
+
+    private Booking findBooking(Long id) {
+        return bookingRepository.findWithDetailsById(id)
+                .orElseThrow(() -> new AuthException(HttpStatus.NOT_FOUND, "Booking not found."));
+    }
+
+    private void ensureOwnerOrAdmin(Booking booking, User currentUser, boolean isAdmin) {
+        if (!isAdmin && !booking.getUser().getId().equals(currentUser.getId())) {
+            throw new AuthException(HttpStatus.NOT_FOUND, "Booking not found.");
+        }
+    }
+
+    private void updateStatus(Booking booking, String status) {
+        String previousStatus = booking.getStatus();
+        if (previousStatus.equals(status)) {
+            return;
+        }
+
+        BookingItem item = booking.getBookingItems().stream().findFirst()
+                .orElseThrow(() -> new AuthException(HttpStatus.CONFLICT, "Booking has no event item."));
+        Event event = item.getEvent();
+        if ("CONFIRMED".equals(previousStatus) && "CANCELLED".equals(status)) {
+            event.setAvailableSeats(event.getAvailableSeats() + booking.getTicketCount());
+            eventRepository.save(event);
+        } else if ("CANCELLED".equals(previousStatus) && "CONFIRMED".equals(status)) {
+            if (event.getAvailableSeats() < booking.getTicketCount()) {
+                throw new AuthException(HttpStatus.CONFLICT, "There are not enough available seats to confirm this booking.");
+            }
+            event.setAvailableSeats(event.getAvailableSeats() - booking.getTicketCount());
+            eventRepository.save(event);
+        }
+        booking.setStatus(status);
     }
 }

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ public class SampleDataInitializer implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final EventCategoryRepository categoryRepository;
     private final VenueRepository venueRepository;
     private final EventRepository eventRepository;
@@ -41,6 +43,7 @@ public class SampleDataInitializer implements CommandLineRunner {
     public SampleDataInitializer(
             RoleRepository roleRepository,
             UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
             EventCategoryRepository categoryRepository,
             VenueRepository venueRepository,
             EventRepository eventRepository,
@@ -49,6 +52,7 @@ public class SampleDataInitializer implements CommandLineRunner {
             AttendeeRepository attendeeRepository) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
         this.categoryRepository = categoryRepository;
         this.venueRepository = venueRepository;
         this.eventRepository = eventRepository;
@@ -107,7 +111,7 @@ public class SampleDataInitializer implements CommandLineRunner {
                 .orElseGet(() -> userRepository.save(User.builder()
                         .name("Alex Morgan")
                         .email(SAMPLE_EMAIL)
-                        .password("demo123")
+                        .password(passwordEncoder.encode("demo123"))
                         .phone("+1 (555) 234-5678")
                         .role("CUSTOMER")
                         .build()));

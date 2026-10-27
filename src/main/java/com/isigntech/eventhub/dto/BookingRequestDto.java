@@ -5,9 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record BookingRequestDto (
-	
-    Long userId,
-
     @NotNull(message = "Event ID is required")
     Long eventId,
 
