@@ -3,11 +3,12 @@ package com.isigntech.eventhub.controller;
 
 import com.isigntech.eventhub.dto.EventRequestDto;
 import com.isigntech.eventhub.entity.Event;
-import com.isigntech.eventhub.entity.EventCategory;
-import com.isigntech.eventhub.entity.Venue;
 import com.isigntech.eventhub.service.EventService;
+import com.isigntech.eventhub.service.RequestUserService;
+import com.isigntech.eventhub.service.AdminService;
 
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,8 @@ import java.util.List;
 public class EventController {
 	
 	private final EventService eventService;
+    private final RequestUserService requestUserService;
+    private final AdminService adminService;
 
 	@GetMapping
     public ResponseEntity<List<Event>> getAllEvents(@RequestParam(required = false) String search) {
@@ -36,23 +39,11 @@ public class EventController {
     }
 
     @PostMapping
-    public ResponseEntity<Event> createEvent(@Valid @RequestBody EventRequestDto requestDto) {
-        Event event = Event.builder()
-                .title(requestDto.title())
-                .description(requestDto.description())
-                .category(EventCategory.builder().id(requestDto.categoryId()).build())
-                .venue(Venue.builder().id(requestDto.venueId()).build())
-                .dateTime(requestDto.dateTime())
-                .price(requestDto.price())
-                .totalSeats(requestDto.totalSeats())
-                .availableSeats(requestDto.totalSeats()) // Initialize available seats to total seats
-                .imageUrl(requestDto.imageUrl())
-                .organizer(requestDto.organizer() != null ? requestDto.organizer() : "EventHub Host")
-                .featured(requestDto.featured() != null ? requestDto.featured() : false)
-                .status("UPCOMING")
-                .build();
-
-        return new ResponseEntity<>(eventService.createEvent(event), HttpStatus.CREATED);
+    public ResponseEntity<Event> createEvent(
+            @Valid @RequestBody EventRequestDto requestDto,
+            HttpServletRequest request) {
+        requestUserService.requireAdmin(request);
+        return new ResponseEntity<>(adminService.createEvent(requestDto), HttpStatus.CREATED);
     }
 
 }

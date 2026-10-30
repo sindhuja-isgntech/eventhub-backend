@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.isigntech.eventhub.entity.BookingItem;
 
 public interface BookingItemRepository extends JpaRepository<BookingItem, Long> {
-
+    boolean existsByEvent_Id(Long eventId);
 }

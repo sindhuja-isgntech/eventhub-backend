@@ -1,6 +1,8 @@
 package com.isigntech.eventhub.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 
 
@@ -17,13 +19,14 @@ public record EventRequestDto (
     @NotNull(message = "Venue ID is required")
     Long venueId,
 
-    @Future(message = "Event date and time must be in the future")
     @NotNull(message = "Event date and time is required")
     LocalDateTime dateTime,
 
+    @NotNull(message = "Price is required")
     @Positive(message = "Price must be greater than zero")
     Double price,
 
+    @NotNull(message = "Total seats are required")
     @Positive(message = "Total seats must be positive")
     Integer totalSeats,
 
@@ -31,4 +34,3 @@ public record EventRequestDto (
     String organizer,
     Boolean featured
 ) {}
-

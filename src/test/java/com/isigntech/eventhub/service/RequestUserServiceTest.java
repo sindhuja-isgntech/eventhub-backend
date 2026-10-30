@@ -11,54 +11,53 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
+import com.isigntech.eventhub.config.JwtAuthenticationInterceptor;
 import com.isigntech.eventhub.entity.User;
 import com.isigntech.eventhub.exception.AuthException;
 import com.isigntech.eventhub.repository.UserRepository;
 
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 
-class AuthSessionServiceTest {
+class RequestUserServiceTest {
     private UserRepository userRepository;
-    private HttpSession session;
-    private AuthSessionService authSessionService;
+    private HttpServletRequest request;
+    private RequestUserService requestUserService;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
-        session = mock(HttpSession.class);
-        authSessionService = new AuthSessionService(userRepository);
+        request = mock(HttpServletRequest.class);
+        requestUserService = new RequestUserService(userRepository);
     }
 
     @Test
-    void rejectsRequestsWithoutSignedInUser() {
-        when(session.getAttribute(AuthSessionService.USER_ID_ATTRIBUTE)).thenReturn(null);
+    void rejectsRequestsWithoutVerifiedTokenIdentity() {
+        when(request.getAttribute(JwtAuthenticationInterceptor.USER_ID_ATTRIBUTE)).thenReturn(null);
 
-        AuthException exception = assertThrows(
-                AuthException.class,
-                () -> authSessionService.requireUser(session));
+        AuthException exception = assertThrows(AuthException.class,
+                () -> requestUserService.requireUser(request));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatus());
     }
 
     @Test
-    void rejectsNonAdminFromAdminEndpoints() {
+    void rejectsCustomerFromAdminEndpoint() {
         User customer = User.builder().id(12L).role("CUSTOMER").build();
-        when(session.getAttribute(AuthSessionService.USER_ID_ATTRIBUTE)).thenReturn(12L);
+        when(request.getAttribute(JwtAuthenticationInterceptor.USER_ID_ATTRIBUTE)).thenReturn(12L);
         when(userRepository.findById(12L)).thenReturn(Optional.of(customer));
 
-        AuthException exception = assertThrows(
-                AuthException.class,
-                () -> authSessionService.requireAdmin(session));
+        AuthException exception = assertThrows(AuthException.class,
+                () -> requestUserService.requireAdmin(request));
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
     }
 
     @Test
-    void returnsAdminForAdminSession() {
+    void resolvesAdminFromCurrentDatabaseRole() {
         User admin = User.builder().id(13L).role("ADMIN").build();
-        when(session.getAttribute(AuthSessionService.USER_ID_ATTRIBUTE)).thenReturn(13L);
+        when(request.getAttribute(JwtAuthenticationInterceptor.USER_ID_ATTRIBUTE)).thenReturn(13L);
         when(userRepository.findById(13L)).thenReturn(Optional.of(admin));
 
-        assertEquals(admin, authSessionService.requireAdmin(session));
+        assertEquals(admin, requestUserService.requireAdmin(request));
     }
 }

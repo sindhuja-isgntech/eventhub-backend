@@ -8,18 +8,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.isigntech.eventhub.dto.AuthResponse;
 import com.isigntech.eventhub.dto.AuthUserResponse;
 import com.isigntech.eventhub.dto.ForgotPasswordRequest;
 import com.isigntech.eventhub.dto.LoginRequest;
 import com.isigntech.eventhub.dto.RegisterRequest;
 import com.isigntech.eventhub.dto.ResetPasswordRequest;
-import com.isigntech.eventhub.entity.User;
-import com.isigntech.eventhub.service.AuthSessionService;
 import com.isigntech.eventhub.service.AuthService;
+import com.isigntech.eventhub.service.JwtService;
+import com.isigntech.eventhub.service.RequestUserService;
 
-import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -27,35 +27,27 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
-    private final AuthSessionService authSessionService;
+    private final RequestUserService requestUserService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthUserResponse> register(
-            @Valid @RequestBody RegisterRequest request,
-            HttpServletRequest httpRequest) {
+    public ResponseEntity<AuthResponse> register(
+            @Valid @RequestBody RegisterRequest request) {
         AuthUserResponse user = authService.register(request);
-        startSession(httpRequest, user.id());
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new AuthResponse(jwtService.issueToken(user.id()), user));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthUserResponse> login(
-            @Valid @RequestBody LoginRequest request,
-            HttpServletRequest httpRequest) {
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest request) {
         AuthUserResponse user = authService.login(request);
-        startSession(httpRequest, user.id());
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(new AuthResponse(jwtService.issueToken(user.id()), user));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<AuthUserResponse> currentUser(HttpSession session) {
-        return ResponseEntity.ok(AuthUserResponse.from(authSessionService.requireUser(session)));
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpSession session) {
-        session.invalidate();
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<AuthUserResponse> currentUser(HttpServletRequest request) {
+        return ResponseEntity.ok(AuthUserResponse.from(requestUserService.requireUser(request)));
     }
 
     @PostMapping("/forgot-password")
@@ -68,13 +60,5 @@ public class AuthController {
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
         return ResponseEntity.noContent().build();
-    }
-
-    private void startSession(HttpServletRequest request, Long userId) {
-        HttpSession existingSession = request.getSession(false);
-        if (existingSession != null) {
-            existingSession.invalidate();
-        }
-        request.getSession(true).setAttribute(AuthSessionService.USER_ID_ATTRIBUTE, userId);
     }
 }
