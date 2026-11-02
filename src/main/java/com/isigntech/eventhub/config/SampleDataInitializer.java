@@ -99,22 +99,37 @@ public class SampleDataInitializer implements CommandLineRunner {
         EventCategory sportsCategory = findOrCreateCategory("Sports & Fitness", "Marathons, Tournaments & Fitness Expos");
 
         // Venues
-        Venue javitsCenter = findOrCreateVenue("Jacob Javits Convention Center", "429 11th Ave", "New York", 3500);
-        Venue amphitheater = findOrCreateVenue("Downtown Amphitheater", "1200 Grand Ave", "Los Angeles", 8000);
-        Venue artsCenter = findOrCreateVenue("Contemporary Arts Center", "201 Michigan Blvd", "Chicago", 1500);
-        Venue palaceHotel = findOrCreateVenue("Palace Hotel Conference Hall", "2 New Montgomery St", "San Francisco", 2000);
-        Venue waterfrontPavilion = findOrCreateVenue("Waterfront Pavilion", "1800 Harbor Drive", "San Diego", 2200);
-        Venue centralPark = findOrCreateVenue("City Central Park & Boulevard", "1000 Park Avenue", "Seattle", 5000);
+        Venue javitsCenter = findOrCreateVenue(
+                "Bengaluru International Exhibition Centre", "10th Mile, Tumkur Road", "Bengaluru", 3500,
+                "Jacob Javits Convention Center");
+        Venue amphitheater = findOrCreateVenue(
+                "Mahalaxmi Racecourse", "Keshavrao Khadye Marg, Mahalaxmi", "Mumbai", 8000,
+                "Downtown Amphitheater");
+        Venue artsCenter = findOrCreateVenue(
+                "Raja Ravi Varma Art Gallery", "Ghole Road, Shivajinagar", "Pune", 1500,
+                "Contemporary Arts Center");
+        Venue palaceHotel = findOrCreateVenue(
+                "Bharat Mandapam", "Pragati Maidan, Mathura Road", "New Delhi", 2000,
+                "Palace Hotel Conference Hall");
+        Venue waterfrontPavilion = findOrCreateVenue(
+                "HITEX Exhibition Centre", "Izzatnagar, Madhapur", "Hyderabad", 2200,
+                "Waterfront Pavilion");
+        Venue centralPark = findOrCreateVenue(
+                "Jawaharlal Nehru Stadium", "Sydenhams Road, Periamet", "Chennai", 5000,
+                "City Central Park & Boulevard");
 
         // Demo User
         User customer = userRepository.findByEmail(SAMPLE_EMAIL)
                 .orElseGet(() -> userRepository.save(User.builder()
-                        .name("Alex Morgan")
+                        .name("Aarav Sharma")
                         .email(SAMPLE_EMAIL)
                         .password(passwordEncoder.encode("demo123"))
-                        .phone("+1 (555) 234-5678")
+                        .phone("+91 98765 43210")
                         .role("CUSTOMER")
                         .build()));
+        customer.setName("Aarav Sharma");
+        customer.setPhone("+91 98765 43210");
+        userRepository.save(customer);
 
         // Seed 6 Showcase Events
         Event techSummit = upsertEvent(
@@ -123,7 +138,7 @@ public class SampleDataInitializer implements CommandLineRunner {
                 techCategory,
                 javitsCenter,
                 LocalDateTime.of(2026, 11, 15, 9, 30),
-                89.0,
+                7999.0,
                 500,
                 86,
                 "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
@@ -132,15 +147,15 @@ public class SampleDataInitializer implements CommandLineRunner {
 
         upsertEvent(
                 "Neon Horizons Electronic Music Festival",
-                "An electrifying two-night audio-visual celebration featuring world-class DJs, immersive laser installations, food truck villages, and interactive art domes under the California night sky.",
+                "An electrifying two-night audio-visual celebration featuring leading Indian DJs, immersive laser installations, street-food favourites, and interactive art under the Mumbai night sky.",
                 musicCategory,
                 amphitheater,
                 LocalDateTime.of(2026, 12, 4, 18, 0),
-                110.0,
+                3999.0,
                 1200,
                 34,
                 "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1200&q=80",
-                "Pulse Music Collective",
+                "Pulse Live India",
                 true);
 
         upsertEvent(
@@ -149,11 +164,11 @@ public class SampleDataInitializer implements CommandLineRunner {
                 artCategory,
                 artsCenter,
                 LocalDateTime.of(2026, 11, 20, 10, 0),
-                32.0,
+                999.0,
                 300,
                 142,
                 "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=1200&q=80",
-                "Chicago Creative Guild",
+                "Pune Creative Collective",
                 false);
 
         upsertEvent(
@@ -162,24 +177,24 @@ public class SampleDataInitializer implements CommandLineRunner {
                 bizCategory,
                 palaceHotel,
                 LocalDateTime.of(2026, 12, 10, 8, 30),
-                149.0,
+                4999.0,
                 400,
                 62,
                 "https://images.unsplash.com/photo-1515187029135-18ee286d815b?auto=format&fit=crop&w=1200&q=80",
-                "Silicon Venture Alliance",
+                "India Startup Alliance",
                 true);
 
         upsertEvent(
                 "Artisan Food & Craft Wine Showcase",
-                "Savor gourmet dishes crafted by Michelin-starred guest chefs paired with rare vintages from 50+ boutique vineyards. Includes live tasting sessions and cooking masterclasses.",
+                "Discover regional Indian dishes from acclaimed chefs, seasonal ingredients, and craft beverages. Includes live tasting sessions and hands-on cooking masterclasses.",
                 foodCategory,
                 waterfrontPavilion,
                 LocalDateTime.of(2026, 11, 28, 12, 0),
-                65.0,
+                1499.0,
                 350,
                 22,
                 "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80",
-                "Pacific Culinary Society",
+                "Indian Culinary Collective",
                 false);
 
         upsertEvent(
@@ -188,11 +203,11 @@ public class SampleDataInitializer implements CommandLineRunner {
                 sportsCategory,
                 centralPark,
                 LocalDateTime.of(2026, 12, 18, 7, 0),
-                42.0,
+                999.0,
                 800,
                 210,
                 "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?auto=format&fit=crop&w=1200&q=80",
-                "Northwest Athletic Club",
+                "Chennai Runners Club",
                 false);
 
         // Seed initial booking if none exists for demo customer
@@ -200,7 +215,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         if (userBookings.isEmpty()) {
             Booking booking = new Booking();
             booking.setUser(customer);
-            booking.setTotalAmount(178.0);
+            booking.setTotalAmount(15998.0);
             booking.setTicketCount(2);
             booking.setStatus("CONFIRMED");
             bookingRepository.save(booking);
@@ -209,15 +224,15 @@ public class SampleDataInitializer implements CommandLineRunner {
             bookingItem.setBooking(booking);
             bookingItem.setEvent(techSummit);
             bookingItem.setQuantity(2);
-            bookingItem.setUnitPrice(89.0);
-            bookingItem.setSubtotal(178.0);
+            bookingItem.setUnitPrice(7999.0);
+            bookingItem.setSubtotal(15998.0);
             bookingItemRepository.save(bookingItem);
 
             attendeeRepository.save(Attendee.builder()
                     .booking(booking)
-                    .name("Alex Morgan")
+                    .name("Aarav Sharma")
                     .email(SAMPLE_EMAIL)
-                    .phone("+1 (555) 234-5678")
+                    .phone("+91 98765 43210")
                     .build());
         }
     }
@@ -233,16 +248,17 @@ public class SampleDataInitializer implements CommandLineRunner {
                         .build()));
     }
 
-    private Venue findOrCreateVenue(String name, String address, String city, int capacity) {
-        return venueRepository.findAll().stream()
-                .filter(venue -> venue.getName().equalsIgnoreCase(name) && venue.getCity().equalsIgnoreCase(city))
+    private Venue findOrCreateVenue(String name, String address, String city, int capacity, String... legacyNames) {
+        Venue venue = venueRepository.findAll().stream()
+                .filter(existing -> existing.getName().equalsIgnoreCase(name)
+                        || List.of(legacyNames).stream().anyMatch(legacyName -> existing.getName().equalsIgnoreCase(legacyName)))
                 .findFirst()
-                .orElseGet(() -> venueRepository.save(Venue.builder()
-                        .name(name)
-                        .address(address)
-                        .city(city)
-                        .capacity(capacity)
-                        .build()));
+                .orElseGet(Venue::new);
+        venue.setName(name);
+        venue.setAddress(address);
+        venue.setCity(city);
+        venue.setCapacity(capacity);
+        return venueRepository.save(venue);
     }
 
     private Event upsertEvent(
