@@ -1,7 +1,10 @@
 package com.isigntech.eventhub.controller;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.isigntech.eventhub.dto.BookingResponse;
+import com.isigntech.eventhub.dto.AdminBookingSummary;
 import com.isigntech.eventhub.dto.CategoryRequestDto;
 import com.isigntech.eventhub.dto.EventRequestDto;
 import com.isigntech.eventhub.dto.VenueRequestDto;
@@ -22,6 +26,7 @@ import com.isigntech.eventhub.entity.Event;
 import com.isigntech.eventhub.entity.EventCategory;
 import com.isigntech.eventhub.entity.User;
 import com.isigntech.eventhub.entity.Venue;
+import com.isigntech.eventhub.exception.AuthException;
 import com.isigntech.eventhub.service.AdminService;
 import com.isigntech.eventhub.service.BookingService;
 import com.isigntech.eventhub.service.RequestUserService;
@@ -39,7 +44,16 @@ public class AdminController {
     private final AdminService adminService;
 
     @GetMapping("/categories")
-    public ResponseEntity<List<EventCategory>> getCategories(HttpServletRequest request) {
+    public ResponseEntity<Page<EventCategory>> getCategories(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            HttpServletRequest request) {
+        requestUserService.requireAdmin(request);
+        return ResponseEntity.ok(adminService.getAllCategories(pageable(page, size, "id")));
+    }
+
+    @GetMapping("/categories/all")
+    public ResponseEntity<java.util.List<EventCategory>> getAllCategories(HttpServletRequest request) {
         requestUserService.requireAdmin(request);
         return ResponseEntity.ok(adminService.getAllCategories());
     }
@@ -69,7 +83,16 @@ public class AdminController {
     }
 
     @GetMapping("/venues")
-    public ResponseEntity<List<Venue>> getVenues(HttpServletRequest request) {
+    public ResponseEntity<Page<Venue>> getVenues(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            HttpServletRequest request) {
+        requestUserService.requireAdmin(request);
+        return ResponseEntity.ok(adminService.getAllVenues(pageable(page, size, "id")));
+    }
+
+    @GetMapping("/venues/all")
+    public ResponseEntity<java.util.List<Venue>> getAllVenues(HttpServletRequest request) {
         requestUserService.requireAdmin(request);
         return ResponseEntity.ok(adminService.getAllVenues());
     }
@@ -99,7 +122,16 @@ public class AdminController {
     }
 
     @GetMapping("/events")
-    public ResponseEntity<List<Event>> getEvents(HttpServletRequest request) {
+    public ResponseEntity<Page<Event>> getEvents(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            HttpServletRequest request) {
+        requestUserService.requireAdmin(request);
+        return ResponseEntity.ok(adminService.getAllEvents(pageable(page, size, "id")));
+    }
+
+    @GetMapping("/events/all")
+    public ResponseEntity<java.util.List<Event>> getAllEvents(HttpServletRequest request) {
         requestUserService.requireAdmin(request);
         return ResponseEntity.ok(adminService.getAllEvents());
     }
@@ -129,9 +161,25 @@ public class AdminController {
     }
 
     @GetMapping("/bookings")
-    public ResponseEntity<List<BookingResponse>> getAllBookings(HttpServletRequest request) {
+    public ResponseEntity<Page<BookingResponse>> getAllBookings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            HttpServletRequest request) {
+        requestUserService.requireAdmin(request);
+        return ResponseEntity.ok(bookingService.getAllBookings(
+                pageable(page, size, "bookingDate", Sort.Direction.DESC)));
+    }
+
+    @GetMapping("/bookings/all")
+    public ResponseEntity<java.util.List<BookingResponse>> getAllBookings(HttpServletRequest request) {
         requestUserService.requireAdmin(request);
         return ResponseEntity.ok(bookingService.getAllBookings());
+    }
+
+    @GetMapping("/bookings/summary")
+    public ResponseEntity<AdminBookingSummary> getBookingSummary(HttpServletRequest request) {
+        requestUserService.requireAdmin(request);
+        return ResponseEntity.ok(bookingService.getConfirmedBookingSummary());
     }
 
     @PatchMapping("/bookings/{id}/status")
@@ -163,5 +211,16 @@ public class AdminController {
             HttpServletRequest request) {
         requestUserService.requireAdmin(request);
         return ResponseEntity.ok(adminService.updateUserProfile(id, user));
+    }
+
+    private Pageable pageable(int page, int size, String sortProperty) {
+        return pageable(page, size, sortProperty, Sort.Direction.DESC);
+    }
+
+    private Pageable pageable(int page, int size, String sortProperty, Sort.Direction direction) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new AuthException(HttpStatus.BAD_REQUEST, "Page must be non-negative and size must be between 1 and 100.");
+        }
+        return PageRequest.of(page, size, Sort.by(direction, sortProperty));
     }
 }

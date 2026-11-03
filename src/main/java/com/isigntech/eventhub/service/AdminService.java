@@ -3,6 +3,8 @@ package com.isigntech.eventhub.service;
 import java.util.List;
 import java.time.LocalDateTime;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,11 @@ public class AdminService {
         return eventCategoryRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
+    public Page<EventCategory> getAllCategories(Pageable pageable) {
+        return eventCategoryRepository.findAll(pageable);
+    }
+
     public EventCategory createCategory(CategoryRequestDto request) {
         return eventCategoryRepository.save(EventCategory.builder()
                 .name(request.name())
@@ -73,8 +80,18 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Venue> getAllVenues(Pageable pageable) {
+        return venueRepository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
     public List<Event> getAllEvents() {
         return eventRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Event> getAllEvents(Pageable pageable) {
+        return eventRepository.findAll(pageable);
     }
 
     public Venue createVenue(VenueRequestDto request) {

@@ -1,6 +1,7 @@
 package com.isigntech.eventhub.service;
 
 import com.isigntech.eventhub.dto.*;
+import com.isigntech.eventhub.dto.AdminBookingSummary;
 import com.isigntech.eventhub.entity.Attendee;
 import com.isigntech.eventhub.entity.Booking;
 import com.isigntech.eventhub.entity.BookingItem;
@@ -10,6 +11,8 @@ import com.isigntech.eventhub.exception.AuthException;
 import com.isigntech.eventhub.repository.BookingRepository;
 import com.isigntech.eventhub.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,6 +97,17 @@ public class BookingService {
                 .stream()
                 .map(BookingResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BookingResponse> getAllBookings(Pageable pageable) {
+        return bookingRepository.findAll(pageable)
+                .map(BookingResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public AdminBookingSummary getConfirmedBookingSummary() {
+        return bookingRepository.getConfirmedBookingSummary();
     }
 
     @Transactional(readOnly = true)

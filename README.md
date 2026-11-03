@@ -21,3 +21,14 @@ $rng.Dispose()
 Then run `.\mvnw.cmd spring-boot:run` from the backend directory. Alternatively, set `JWT_SECRET` in the process environment or deployment secret store; environment variables take precedence over `.env`. Keep the secret private and use the same value across backend instances. The frontend stores the JWT in `sessionStorage` and clears it when the user signs out.
 
 Password reset uses `POST /api/auth/forgot-password` and `POST /api/auth/reset-password`. Reset links are sent by SMTP, expire after 15 minutes, and are single-use. Configure SMTP using `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SMTP_AUTH`, and `MAIL_SMTP_STARTTLS`. Set `FRONTEND_URL` to the frontend origin used in reset links (defaults to `http://localhost:5173`). Do not commit SMTP credentials.
+
+## Admin list pagination
+
+The admin list endpoints return Spring Data page responses. They use zero-based page indexes, default to five records per page, and accept a maximum page size of 100:
+
+- `GET /api/admin/events?page=0&size=5`
+- `GET /api/admin/categories?page=0&size=5`
+- `GET /api/admin/venues?page=0&size=5`
+- `GET /api/admin/bookings?page=0&size=5`
+
+Responses include `content`, `number`, `size`, `totalElements`, and `totalPages`. The corresponding `/all` endpoints are retained for internal app uses that explicitly need the complete list.
